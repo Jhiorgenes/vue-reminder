@@ -1,7 +1,5 @@
 <template>
-  <div
-    class="flex flex-col justify-center h-screen sm:h-full max-w-3xl m-auto px-4"
-  >
+  <div class="flex flex-col justify-center sm:h-full max-w-3xl mx-auto px-4">
     <dialog id="modal_reminder" class="modal">
       <div
         class="modal-box flex flex-col items-center justify-center bg-gray-400"
@@ -34,6 +32,7 @@
         <strong class="text-modal text-blue flex-wrap"
           >Parabéns, você completou sua meta diária!</strong
         >
+        <button @click="play" ref="finishedSoundButton"></button>
       </div>
     </dialog>
     <div>
@@ -46,7 +45,7 @@
         <div class="flex flex-col items-center mt-8">
           <strong class="font-bold text-[#1F2128] text-card">Beber água</strong>
           <p class="text-[#1F2128] font-semibold text-title">
-            Meta: {{ mlValueMeta / 1000 }}L
+            Meta: {{ mililiters / 1000 }}L
           </p>
         </div>
       </div>
@@ -55,13 +54,13 @@
           <div class="flex flex-col gap-2">
             <div class="flex justify-between items-center">
               <h2 class="text-title font-medium text-blue">Meta diária</h2>
-              <p class="text-[#4E4964] font-medium">{{ mlValueMeta }}ml</p>
+              <p class="text-[#4E4964] font-medium">{{ mililiters }}ml</p>
             </div>
             <input
               type="range"
               min="0"
               max="10000"
-              v-model="sliderMeta"
+              v-model="sliderMililiters"
               class="range range-primary"
               step="100"
             />
@@ -71,13 +70,13 @@
               <h2 class="text-title font-medium text-blue">
                 Quantidade por timer
               </h2>
-              <p class="text-[#4E4964] font-medium">{{ mlValueTimer }}ml</p>
+              <p class="text-[#4E4964] font-medium">{{ quantityPerTime }}ml</p>
             </div>
             <input
               type="range"
               min="0"
               max="3000"
-              v-model="sliderMlTimerValue"
+              v-model="sliderQuantityPerTime"
               class="range range-primary"
               step="100"
             />
@@ -125,57 +124,79 @@
 <script setup>
 import { ref, computed } from 'vue'
 import Header from '../components/Header.vue'
+import tadaSound from '../assets/audio/tada.mp3'
+import { useSound } from '@vueuse/sound'
 
+let countdownInterval = null
 const savedWaterPercentage = localStorage.getItem('savedWaterPercentage')
 const percentage = ref(
   savedWaterPercentage ? parseInt(savedWaterPercentage) : 0
 )
-let countdownInterval = null
 const countdownMinutes = ref(10)
 const countdownSeconds = ref(0)
 const isTimerRunning = ref(false)
 
-const sliderMeta = ref(3000)
-const sliderMlTimerValue = ref(300)
+const sliderMililiters = ref(3000)
+const sliderQuantityPerTime = ref(300)
 
-const mlValueTimer = computed(() => {
-  return sliderMlTimerValue.value // Isso é apenas um exemplo direto do valor do slider
-  // Se o valor não for direto e precisar ser convertido, faça a conversão aqui
+const quantityPerTime = computed(() => sliderQuantityPerTime.value)
+
+const mililiters = computed(() => {
+  return sliderMililiters.value
 })
-const mlValueMeta = computed(() => {
-  return sliderMeta.value // Isso é apenas um exemplo direto do valor do slider
-  // Se o valor não for direto e precisar ser convertido, faça a conversão aqui
-})
+
+const finishedSoundButton = ref(null)
+const { play } = useSound(tadaSound)
 
 function initiateCountdown() {
-  if (countdownInterval) return // Para evitar múltiplas execuções simultâneas
+  if (countdownInterval) return // Evita múltiplas execuções simultâneas
+
   isTimerRunning.value = true
-  countdownInterval = setInterval(() => {
-    if (countdownSeconds.value > 0) {
-      countdownSeconds.value--
-    } else if (countdownMinutes.value > 0) {
-      countdownMinutes.value--
-      countdownSeconds.value = 59
-    } else {
-      clearInterval(countdownInterval)
-      countdownInterval = null
-      isTimerRunning.value = false
-      modal_reminder.showModal()
-      const currentProgress = Math.floor(
-        (mlValueTimer.value / mlValueMeta.value) * 100
-      )
-      percentage.value += currentProgress
-      localStorage.setItem('savedWaterPercentage', percentage.value.toString())
-      if (percentage.value >= 100) {
-        modal_reminder.close()
-        modal_completed.showModal()
-        percentage.value = 0
-        localStorage.removeItem('savedWaterPercentage')
-      }
-      countdownMinutes.value = 0
-      countdownSeconds.value = 0
-    }
-  }, 1000) // Intervalo de decremento em milissegundos (1 segundo neste caso)
+  countdownInterval = setInterval(decrementTimer, 1000) // Intervalo de 1 segundo
+}
+
+function decrementTimer() {
+  if (countdownSeconds.value > 0) {
+    countdownSeconds.value-- // Decrementa os segundos
+  } else if (countdownMinutes.value > 0) {
+    countdownMinutes.value-- // Decrementa os minutos
+    countdownSeconds.value = 59 // Reseta os segundos para 59
+  } else {
+    finishCountdown() // Executa lógica de término do contador
+  }
+}
+
+function finishCountdown() {
+  clearInterval(countdownInterval) // Limpa o intervalo
+  countdownInterval = null
+  isTimerRunning.value = false
+
+  // Lógica adicional relacionada ao seu aplicativo
+  modal_reminder.showModal()
+  const currentProgress = Math.floor(
+    (quantityPerTime.value / mililiters.value) * 100
+  )
+  percentage.value += currentProgress
+  localStorage.setItem('savedWaterPercentage', percentage.value.toString())
+
+  if (percentage.value >= 100) {
+    handleCompletion() // Executa lógica quando a porcentagem atinge 100%
+  }
+
+  resetCountdown() // Reseta os valores do contador
+}
+
+function handleCompletion() {
+  finishedSoundButton.value.click()
+  modal_reminder.close()
+  modal_completed.showModal()
+  percentage.value = 0
+  localStorage.removeItem('savedWaterPercentage')
+}
+
+function resetCountdown() {
+  countdownMinutes.value = 0
+  countdownSeconds.value = 0
 }
 </script>
 

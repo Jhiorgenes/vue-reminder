@@ -3,5 +3,5 @@
 @tailwind utilities;
 
 body > div {
-  height: auto;
+  height: 100vh;
 }

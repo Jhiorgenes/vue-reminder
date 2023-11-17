@@ -1,7 +1,5 @@
 <template>
-  <div
-    class="flex flex-col justify-center h-screen sm:h-full max-w-3xl m-auto px-4"
-  >
+  <div class="flex flex-col justify-center sm:h-full max-w-3xl mx-auto px-4">
     <dialog id="modal_reminder" class="modal">
       <div
         class="modal-box flex flex-col items-center justify-center bg-gray-400"
@@ -34,6 +32,7 @@
         <strong class="text-modal text-blue flex-wrap"
           >Parabéns, você completou sua meta diária!</strong
         >
+        <button @click="play" ref="finishedSoundButton"></button>
       </div>
     </dialog>
     <div>
@@ -48,7 +47,7 @@
         <div class="flex flex-col items-center mt-8">
           <strong class="font-bold text-[#1F2128] text-card">Alongar</strong>
           <p class="text-[#1F2128] font-semibold text-title">
-            Meta: {{ valueMeta }}x
+            Meta: {{ goalValue }}x
           </p>
         </div>
       </div>
@@ -57,23 +56,16 @@
           <div class="flex flex-col gap-2">
             <div class="flex justify-between items-center">
               <h2 class="text-title font-medium text-blue">Meta diária</h2>
-              <p class="text-[#4E4964] font-medium">{{ valueMeta }}x</p>
+              <p class="text-[#4E4964] font-medium">{{ goalValue }}x</p>
             </div>
             <input
               type="range"
               min="0"
               max="50"
-              v-model="sliderMeta"
+              v-model="slider"
               class="range range-primary"
               step="1"
             />
-            <div class="w-full flex justify-between text-xs px-2">
-              <span></span>
-              <span></span>
-              <span></span>
-              <span></span>
-              <span></span>
-            </div>
           </div>
         </div>
         <div class="mt-10 flex items-center justify-center gap-4">
@@ -83,7 +75,7 @@
             <span class="countdown font-mono text-4xl text-white">
               <input
                 type="number"
-                class="bg-transparent text-white w-16 focus:outline-0 text-center"
+                class="bg-transparent text-white w-10 sm:w-16 focus:outline-0 text-center"
                 v-model="countdownMinutes"
               />
             </span>
@@ -96,7 +88,7 @@
             <span class="countdown font-mono text-4xl text-white">
               <input
                 type="number"
-                class="bg-transparent text-white w-16 focus:outline-0 text-center"
+                class="bg-transparent text-white w-10 sm:w-16 focus:outline-0 text-center"
                 v-model="countdownSeconds"
               />
             </span>
@@ -116,8 +108,10 @@
   </div>
 </template>
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import Header from '../components/Header.vue'
+import tadaSound from '../assets/audio/tada.mp3'
+import { useSound } from '@vueuse/sound'
 
 const savedStretchesPercentage = localStorage.getItem(
   'savedStretchesPercentage'
@@ -130,43 +124,62 @@ const countdownSeconds = ref(0)
 const isTimerRunning = ref(false)
 let countdownInterval = null
 
-const sliderMeta = ref(5)
+const slider = ref(5)
 
-const valueMeta = computed(() => {
-  return sliderMeta.value // Isso é apenas um exemplo direto do valor do slider
-  // Se o valor não for direto e precisar ser convertido, faça a conversão aqui
-})
+const goalValue = computed(() => slider.value)
+
+const finishedSoundButton = ref(null)
+const { play } = useSound(tadaSound)
 
 function initiateCountdown() {
-  if (countdownInterval) return // Para evitar múltiplas execuções simultâneas
+  if (countdownInterval) return // Evita múltiplas execuções simultâneas
+
   isTimerRunning.value = true
-  countdownInterval = setInterval(() => {
-    if (countdownSeconds.value > 0) {
-      countdownSeconds.value--
-    } else if (countdownMinutes.value > 0) {
-      countdownMinutes.value--
-      countdownSeconds.value = 59
-    } else {
-      clearInterval(countdownInterval)
-      countdownInterval = null
-      isTimerRunning.value = false
-      modal_reminder.showModal()
-      const currentProgress = Math.floor((1 / valueMeta.value) * 100)
-      percentage.value += currentProgress
-      localStorage.setItem(
-        'savedStretchesPercentage',
-        percentage.value.toString()
-      )
-      if (percentage.value >= 100) {
-        percentage.value = 0
-        modal_reminder.close()
-        modal_completed.showModal()
-        localStorage.removeItem('savedStretchesPercentage')
-      }
-      countdownMinutes.value = 0
-      countdownSeconds.value = 0
-    }
-  }, 1000) // Intervalo de decremento em milissegundos (1 segundo neste caso)
+  countdownInterval = setInterval(decrementTimer, 1000) // Intervalo de 1 segundo
+}
+
+function decrementTimer() {
+  if (countdownSeconds.value > 0) {
+    countdownSeconds.value-- // Decrementa os segundos
+  } else if (countdownMinutes.value > 0) {
+    countdownMinutes.value-- // Decrementa os minutos
+    countdownSeconds.value = 59 // Reseta os segundos para 59
+  } else {
+    finishCountdown() // Executa lógica de término do contador
+  }
+}
+
+function finishCountdown() {
+  clearInterval(countdownInterval) // Limpa o intervalo
+  countdownInterval = null
+  isTimerRunning.value = false
+
+  // Lógica adicional relacionada ao seu aplicativo
+  modal_reminder.showModal()
+  const currentProgress = Math.floor(
+    (mlValueTimer.value / mlValueMeta.value) * 100
+  )
+  percentage.value += currentProgress
+  localStorage.setItem('savedWaterPercentage', percentage.value.toString())
+
+  if (percentage.value >= 100) {
+    handleCompletion() // Executa lógica quando a porcentagem atinge 100%
+  }
+
+  resetCountdown() // Reseta os valores do contador
+}
+
+function handleCompletion() {
+  finishedSoundButton.value.click()
+  modal_reminder.close()
+  modal_completed.showModal()
+  percentage.value = 0
+  localStorage.removeItem('savedWaterPercentage')
+}
+
+function resetCountdown() {
+  countdownMinutes.value = 0
+  countdownSeconds.value = 0
 }
 </script>
 

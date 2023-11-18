@@ -1,5 +1,7 @@
 <template>
-  <div class="flex flex-col justify-center sm:h-full max-w-3xl mx-auto px-4">
+  <div
+    class="flex flex-col justify-center py-10 sm:h-full max-w-3xl mx-auto px-4"
+  >
     <dialog id="modal_reminder" class="modal">
       <div
         class="modal-box flex flex-col items-center justify-center bg-gray-400"

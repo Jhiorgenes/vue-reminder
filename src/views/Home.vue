@@ -1,5 +1,7 @@
 <template>
-  <div class="flex flex-col justify-center sm:h-screen max-w-3xl mx-auto px-4">
+  <div
+    class="flex flex-col justify-center py-10 sm:h-screen max-w-3xl mx-auto px-4"
+  >
     <div>
       <Header />
     </div>

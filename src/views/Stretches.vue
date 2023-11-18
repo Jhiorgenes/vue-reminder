@@ -156,11 +156,9 @@ function finishCountdown() {
 
   // Lógica adicional relacionada ao seu aplicativo
   modal_reminder.showModal()
-  const currentProgress = Math.floor(
-    (mlValueTimer.value / mlValueMeta.value) * 100
-  )
+  const currentProgress = Math.floor((1 / goalValue.value) * 100)
   percentage.value += currentProgress
-  localStorage.setItem('savedWaterPercentage', percentage.value.toString())
+  localStorage.setItem('savedStretchesPercentage', percentage.value.toString())
 
   if (percentage.value >= 100) {
     handleCompletion() // Executa lógica quando a porcentagem atinge 100%
@@ -174,7 +172,7 @@ function handleCompletion() {
   modal_reminder.close()
   modal_completed.showModal()
   percentage.value = 0
-  localStorage.removeItem('savedWaterPercentage')
+  localStorage.removeItem('savedStretchesPercentage')
 }
 
 function resetCountdown() {

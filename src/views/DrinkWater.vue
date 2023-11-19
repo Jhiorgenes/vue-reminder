@@ -1,6 +1,6 @@
 <template>
   <div
-    class="flex flex-col justify-center py-10 sm:h-full max-w-3xl mx-auto px-4"
+    class="flex flex-col justify-center py-10 sm:h-screen max-w-3xl mx-auto px-4"
   >
     <dialog id="modal_reminder" class="modal">
       <div
